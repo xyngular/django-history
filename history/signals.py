@@ -106,3 +106,9 @@ def trackedmodel_post_delete(sender, instance, **kwargs):
 
     ModelHistory.objects.create(
         app_label=app_label, model_name=model_name, detail=detail)
+
+
+def model_history_pub_queue_post_save(sender, instance, created, **kwargs):
+    '''Publish model history changes to message queue if configured'''
+    if instance.should_publish_to_queue:
+        instance.publish_to_queue()

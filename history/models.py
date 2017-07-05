@@ -4,6 +4,8 @@ from enum import Enum
 from django.db import models
 from django.contrib.postgres.fields import JSONField
 from django.apps import apps
+from django.conf import settings
+from kombu import Connection, Exchange
 
 logger = logging.getLogger(__name__)
 
@@ -55,3 +57,48 @@ class ModelHistory(models.Model):
                                     model_pk))
             logger.info(message)
             return None
+
+    @property
+    def app_model_name(self):
+        return '%s.%s' % (self.app_label.lower(), self.model_name.title())
+
+    @property
+    def config(self):
+        if not hasattr(settings, 'HISTORY') or not settings.HISTORY.get('MODELS'):
+            return {}
+
+        return settings.HISTORY['MODELS'].get(self.app_model_name) or {}
+
+    @property
+    def should_publish_to_queue(self):
+        if self.config.get('publish_to_queue'):
+            return self.config.get('publish_to_queue')
+        else:
+            return False
+
+    @property
+    def message_body(self):
+        """Format the detail and model attributed for the message body"""
+        body = {
+            'service_change_id': self.pk,
+            'service_name': settings.HISTORY['SERVICE_NAME'],
+            'module': self.app_label.lower(),
+            'object': self.model_name.lower(),
+            'detail': self.detail,
+        }
+        return body
+
+    def publish_to_queue(self):
+        if not self.should_publish_to_queue:
+            return None
+
+        broker_url = settings.HISTORY['BROKER_URL']
+
+        exchange_name = self.config.get('exchange_name')
+        if not exchange_name:
+            exchange_name = '%s.change' % self.app_model_name.lower()
+
+        exchange = Exchange(exchange_name, 'fanout', durable=True)
+        with Connection(broker_url) as conn:
+            producer = conn.Producer(exchange=exchange, serializer='json')
+            producer.publish(self.message_body, retry=True)
