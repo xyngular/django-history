@@ -16,6 +16,8 @@ class ModelHistory(models.Model):
         update = 'update'
         delete = 'delete'
 
+    id = models.BigAutoField(primary_key=True)
+
     CHANGE_TYPE_CHOICES = ((t.value, t.name.title()) for t in ChangeType)
 
     app_label = models.CharField(max_length=255, db_index=True)
