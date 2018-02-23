@@ -1,5 +1,6 @@
 from rest_framework import viewsets
 import rest_framework_filters as filters
+from rest_framework_filters.backends import DjangoFilterBackend
 from . import models
 from . import serializers
 
@@ -21,3 +22,4 @@ class ModelHistoryViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = models.ModelHistory.objects.all()
     serializer_class = serializers.ModelHistorySerializer
     required_scopes = []
+    filter_backends = (DjangoFilterBackend,)
