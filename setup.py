@@ -10,6 +10,9 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 requirements = [
     'kombu',
     'django',
+    'djangorestframework',
+    'djangorestframework-filters',
+    'djangorestframework-queryfields',
 ]
 
 setup_requirements = [
