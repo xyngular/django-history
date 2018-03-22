@@ -20,8 +20,10 @@ class ModelHistory(models.Model):
 
     CHANGE_TYPE_CHOICES = ((t.value, t.name.title()) for t in ChangeType)
 
+    # Consider indexing these two together?
     app_label = models.CharField(max_length=255, db_index=True)
     model_name = models.CharField(max_length=100, db_index=True)
+
     detail = JSONField()
     timestamp = models.DateTimeField(auto_now_add=True, db_index=True)
 
